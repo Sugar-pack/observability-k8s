@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      name: promtail
+  template:
+    metadata:
+      labels:
+        name: promtail
+    spec:
+      containers:
+        - name: promtail
+          image: grafana/promtail:3.2.0
+          args:
+            - "-config.file=/etc/promtail/promtail-config.yaml"
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: config
+              mountPath: /etc/promtail/promtail-config.yaml
+              subPath: promtail-config.yaml
+            - name: varlog
+              mountPath: /var/log
+            - name: docker
+              mountPath: /var/lib/docker/containers
+            - name: pods
+              mountPath: /var/log/pods
+            - name: systemd
+              mountPath: /run/systemd/journal
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: promtail-config
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: docker
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: pods
+          hostPath:
+            path: /var/log/pods
+        - name: systemd
+          hostPath:
+            path: /run/systemd/journal
