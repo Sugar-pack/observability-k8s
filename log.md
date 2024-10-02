@@ -7,7 +7,7 @@ kubectl apply -f ./loki/deployment.yaml
 kubectl apply -f ./loki/service.yaml
 kubectl apply -f ./loki/persistentvolume.yaml
 kubectl apply -f ./promtail/configmap.yaml
-kubectl apply -f ./promtail/deployment.yaml
+kubectl apply -f ./promtail/daemonset.yaml
 
 kubectl apply -f ./promtail/service.yaml # optional
 ```
@@ -30,3 +30,5 @@ kubectl apply -f ./promtail/service.yaml # optional
 ![image](img/logs-options.png)
 - Click "Apply"
 ![image](img/dashboard.png)
+
+- To generate some errors in the go-app you can use /error endpoint
