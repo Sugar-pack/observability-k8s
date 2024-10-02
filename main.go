@@ -6,6 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
 )
 
 var (
@@ -20,6 +21,10 @@ func init() {
 }
 
 func main() {
+	// Initialize the Zap logger
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // Flushes buffer, if any
+
 	// Set health to healthy on startup
 	healthStatus.Set(1)
 
@@ -44,11 +49,24 @@ func main() {
 		healthStatus.Set(0) // App is unhealthy when this endpoint is hit
 	})
 
+	// Handle the /error endpoint to trigger an error log
+	http.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintln(w, "error occurred")
+
+		// Log the error in JSON format with Zap
+		logger.Error("An error occurred",
+			zap.String("endpoint", "/error"),
+			zap.String("severity", "error"),
+			zap.String("message", "Triggered an error log"),
+		)
+	})
+
 	// Expose the Prometheus metrics endpoint
 	http.Handle("/metrics", promhttp.Handler())
 
 	// Start the server on port 8080
-	fmt.Println("Starting server on :8080")
+	logger.Info("Starting server on port 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error starting server:", err)
 	}

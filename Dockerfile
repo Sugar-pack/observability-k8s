@@ -11,7 +11,7 @@ COPY . .
 RUN go build -o main .
 
 # Use a minimal base image to run the application
-FROM scratch
+FROM golang:1.23-alpine
 
 # Set the working directory inside the container
 WORKDIR /root/

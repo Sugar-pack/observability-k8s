@@ -95,3 +95,7 @@ To test it you can use /unhealthy endpoint of the go app server to see the perce
 up{job="go-app"}
 ```
 It will show the uptime of the go app server.
+
+### 8. Add Error Logs to the Dashboard
+To add logs to the Grafana dashboard, we need to deploy the Loki and Promtail components.
+For more details, check the [log.md](log.md) file.
