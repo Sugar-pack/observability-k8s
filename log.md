@@ -30,5 +30,6 @@ kubectl apply -f ./promtail/service.yaml # optional
 ![image](img/logs-options.png)
 - Click "Apply"
 ![image](img/dashboard.png)
-
-- To generate some errors in the go-app you can use /error endpoint
+- To generate some errors in the go-app you can use /error endpoint.
+These kinds of logs can be useful for monitoring and aggregating (and filtering by certain criteria like level) logs.
+It's possible to add new targets to the Promtail config map to collect logs from other sources.

@@ -86,15 +86,18 @@ You should see the Grafana home page:
 5. You can use the following query to get the metrics:
 
 ```bash
+up{job="go-app"}
+```
+It will show the uptime of the go app server.
+This metric is provided by Prometheus itself and it more useful for the monitoring of the server itself.
+
+```bash
 avg_over_time(go_app_health_status[5m]) * 100
 ```
 It will show the healthy status percentage of the go app server over the last 5 minutes.
 To test it you can use /unhealthy endpoint of the go app server to see the percentage drop.
-
-```bash
-up{job="go-app"}
-```
-It will show the uptime of the go app server.
+The value is setting via code, so you can use this approach to add you own prometheus metrics.
+Such kind of metrics can be useful to add additional data, if default metrics are not enough.
 
 ### 8. Add Error Logs to the Dashboard
 To add logs to the Grafana dashboard, we need to deploy the Loki and Promtail components.
