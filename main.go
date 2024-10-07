@@ -10,14 +10,18 @@ import (
 )
 
 var (
-	healthStatus = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "go_app_health_status",
-		Help: "The health status of the Go app (1 = healthy, 0 = unhealthy)",
-	})
+	// Define a CounterVec with labels for "url" and "success"
+	requestCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "go_app_http_requests_total",
+			Help: "Total number of HTTP requests received, labeled by URL and success status",
+		},
+		[]string{"url", "success"}, // Define labels
+	)
 )
 
 func init() {
-	prometheus.MustRegister(healthStatus)
+	prometheus.MustRegister(requestCounter)
 }
 
 func main() {
@@ -25,34 +29,28 @@ func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // Flushes buffer, if any
 
-	// Set health to healthy on startup
-	healthStatus.Set(1)
-
 	// Handle the /health endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "healthy")
-		healthStatus.Set(1) // App is healthy when this endpoint is hit
+
+		requestCounter.WithLabelValues("/health", "true").Inc()
 	})
 
 	// Handle the /ping endpoint
 	http.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "pong")
-	})
 
-	// Handle the /unhealthy endpoint
-	// This endpoint will set the health status to unhealthy
-	http.HandleFunc("/unhealthy", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "unhealthy")
-		healthStatus.Set(0) // App is unhealthy when this endpoint is hit
+		requestCounter.WithLabelValues("/ping", "true").Inc()
 	})
 
 	// Handle the /error endpoint to trigger an error log
 	http.HandleFunc("/error", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintln(w, "error occurred")
+
+		requestCounter.WithLabelValues("/error", "false").Inc()
 
 		// Log the error in JSON format with Zap
 		logger.Error("An error occurred",

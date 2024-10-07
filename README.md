@@ -8,7 +8,7 @@ Simple observability setup for Kubernetes using Prometheus, Grafana for go api s
 - Docker installed and running locally
 - Install [Go](https://golang.org/doc/install)
 
-## Steps
+## I. Metrics dashboards
 
 ### 1. Start Minikube
 
@@ -92,13 +92,43 @@ It will show the uptime of the go app server.
 This metric is provided by Prometheus itself and it more useful for the monitoring of the server itself.
 
 ```bash
-avg_over_time(go_app_health_status[5m]) * 100
+increase(go_app_http_requests_total[5m])
 ```
-It will show the healthy status percentage of the go app server over the last 5 minutes.
-To test it you can use /unhealthy endpoint of the go app server to see the percentage drop.
-The value is setting via code, so you can use this approach to add you own prometheus metrics.
-Such kind of metrics can be useful to add additional data, if default metrics are not enough.
+This query shows the number of requests over the last 5 minutes. You can use labels (such as url and success) to filter
+the results, allowing you to see how specific URLs or success statuses impact the total request count.
 
-### 8. Add Error Logs to the Dashboard
-To add logs to the Grafana dashboard, we need to deploy the Loki and Promtail components.
-For more details, check the [log.md](log.md) file.
+## II. Add Error Logs to the Dashboard
+
+### 1. Deploy Loki and Promtail to k8s
+```bash
+kubectl apply -f ./loki/configmap.yaml
+kubectl apply -f ./loki/deployment.yaml
+kubectl apply -f ./loki/service.yaml
+kubectl apply -f ./loki/persistentvolume.yaml
+kubectl apply -f ./promtail/configmap.yaml
+kubectl apply -f ./promtail/daemonset.yaml
+
+kubectl apply -f ./promtail/service.yaml # optional
+```
+
+### 2. Add Loki datasource to Grafana
+- Open Grafana in your browser
+- Go to Configuration -> Data Sources
+- Click on "Add data source"
+- Choose "Loki" from the list
+- Set the URL to `http://loki:3100`
+- Click "Save & Test"
+
+### 3. Add error logs to the dashboard
+- Open the dashboard you want to add logs to
+- Click on "Add panel"
+- Choose "Logs" from the list
+  ![image](img/add-logs.jpeg)
+- Set the query to {job="go-app"} | json | detected_level="error"
+- Modify options as needed. Example:
+  ![image](img/logs-options.png)
+- Click "Apply"
+  ![image](img/dashboard.png)
+- To generate some errors in the go-app you can use /error endpoint.
+  These kinds of logs can be useful for monitoring and aggregating (and filtering by certain criteria like level) logs.
+  It's possible to add new targets to the Promtail config map to collect logs from other sources.
